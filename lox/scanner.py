@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from token import Token
+from tokens import Token
 from token_type import TokenType
 
 
