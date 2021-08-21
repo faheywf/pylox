@@ -2,8 +2,11 @@ import argparse
 import sys
 from typing import List
 
+from ast_printer import AstPrinter
+from expr import Expr
+from lox_parser import Parser
 from scanner import Scanner
-
+from tokens import Token
 
 class Lox():
     def __init__(self):
@@ -26,9 +29,14 @@ class Lox():
     def run(self, source: str):
         scanner = Scanner(source, self.error)
         tokens: List[Token] = scanner.scan_tokens()
+        parser = Parser(tokens, self.report)
+        expression = parser.parse()
 
-        for token in tokens:
-            print(token)
+        if self.had_error:
+            return
+        
+        ast_printer = AstPrinter()
+        print(ast_printer.print(expression))
 
     def error(self, line: int, msg: str):
         self.report(line, "", msg)
