@@ -1,12 +1,12 @@
 from typing import List
 import attr
-from expr import Binary, Expr, Grouping, Literal, Unary, Visitor
+from expr import Binary, Expr, Grouping, Literal, Unary, ExprVisitor
 from token_type import TokenType
 from tokens import Token
 
 
 @attr.s(auto_attribs=True)
-class AstPrinter(Visitor[str]):
+class AstPrinter(ExprVisitor[str]):
     def print(self, expr: Expr)-> str:
         return expr.accept(self)
 

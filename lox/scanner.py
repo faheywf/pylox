@@ -86,9 +86,8 @@ class Scanner():
                 self.add_token(TokenType.GREATER)
         elif c =="/":
             if self.match("/"):
-                # a comment goes until the end of the self.line
-                p = self.peek()
-                while p != "\n" and not self.is_at_end():
+                # a comment goes until the end of the line
+                while self.peek() != "\n" and not self.is_at_end():
                     self.current += 1
             else:
                 self.add_token(TokenType.SLASH)

@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, List, TypeVar
 import attr
 from tokens import Token
 
@@ -7,8 +7,17 @@ R = TypeVar("R")
 
 @attr.s(auto_attribs=True)
 class Expr(ABC):
-	def accept(self, visitor: "Visitor"):
+	def accept(self, visitor: "ExprVisitor"):
 		raise NotImplemented()
+
+
+@attr.s(auto_attribs=True)
+class Assign(Expr):
+	name: Token
+	value: Expr
+
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
+		return visitor.visit_assign_expr(self)
 
 
 @attr.s(auto_attribs=True)
@@ -17,7 +26,7 @@ class Binary(Expr):
 	operator: Token
 	right: Expr
 
-	def accept(self, visitor: "Visitor[R]") -> R:
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_binary_expr(self)
 
 
@@ -25,7 +34,7 @@ class Binary(Expr):
 class Grouping(Expr):
 	expression: Expr
 
-	def accept(self, visitor: "Visitor[R]") -> R:
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_grouping_expr(self)
 
 
@@ -33,7 +42,7 @@ class Grouping(Expr):
 class Literal(Expr):
 	value: Any
 
-	def accept(self, visitor: "Visitor[R]") -> R:
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_literal_expr(self)
 
 
@@ -42,12 +51,23 @@ class Unary(Expr):
 	operator: Token
 	right: Expr
 
-	def accept(self, visitor: "Visitor[R]") -> R:
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_unary_expr(self)
 
 
 @attr.s(auto_attribs=True)
-class Visitor(ABC, Generic[R]):
+class Variable(Expr):
+	name: Token
+
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
+		return visitor.visit_variable_expr(self)
+
+
+@attr.s(auto_attribs=True)
+class ExprVisitor(ABC, Generic[R]):
+	def visit_assign_expr(self, expr: Assign) -> R:
+		raise NotImplemented()
+
 	def visit_binary_expr(self, expr: Binary) -> R:
 		raise NotImplemented()
 
@@ -58,5 +78,8 @@ class Visitor(ABC, Generic[R]):
 		raise NotImplemented()
 
 	def visit_unary_expr(self, expr: Unary) -> R:
+		raise NotImplemented()
+
+	def visit_variable_expr(self, expr: Variable) -> R:
 		raise NotImplemented()
 

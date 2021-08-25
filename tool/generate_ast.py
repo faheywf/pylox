@@ -3,20 +3,20 @@ import os
 from typing import List
 
 
-def define_ast(output_dir: str, base_name: str, types: List[str]):
+def define_ast(output_dir: str, base_name: str, types: List[str], internal_dependencies: List[str] = []):
     output_path = os.path.join(output_dir, f"{base_name.lower()}.py")
 
     output : List[str] = []
     output.append("from abc import ABC")
-    output.append("from typing import Any, Generic, TypeVar")
+    output.append("from typing import Any, Generic, List, TypeVar")
     output.append("import attr")
-    output.append("from tokens import Token")
+    output += internal_dependencies
     output.append("")
     output.append("R = TypeVar(\"R\")")
     output.append("")
     output.append("@attr.s(auto_attribs=True)")
     output.append(f"class {base_name}(ABC):")
-    output.append("\tdef accept(self, visitor: \"Visitor\"):")
+    output.append(f"\tdef accept(self, visitor: \"{base_name}Visitor\"):")
     output.append(f"\t\traise NotImplemented()")
     output.append("")
     output.append("")
@@ -34,7 +34,7 @@ def define_ast(output_dir: str, base_name: str, types: List[str]):
 
 def define_visitor(output: List[str], base_name: str, types: List[str]):
     output.append("@attr.s(auto_attribs=True)")
-    output.append(f"class Visitor(ABC, Generic[R]):")
+    output.append(f"class {base_name}Visitor(ABC, Generic[R]):")
     for t in types:
         type_name = t.split(":")[0].strip()
         output.append(f"\tdef visit_{type_name.lower()}_{base_name.lower()}(self, {base_name.lower()}: {type_name}) -> R:")
@@ -53,7 +53,7 @@ def define_type(output: List[str], base_name: str, class_name: str, fields: str)
 
     output.append("")
     
-    output.append("\tdef accept(self, visitor: \"Visitor[R]\") -> R:")
+    output.append(f"\tdef accept(self, visitor: \"{base_name}Visitor[R]\") -> R:")
     output.append(f"\t\treturn visitor.visit_{class_name.lower()}_{base_name.lower()}(self)")
 
 
@@ -63,9 +63,22 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     define_ast(args.output_dir, "Expr", [
+        "Assign   : Token name, Expr value",
         "Binary   : Expr left, Token operator, Expr right",
         "Grouping : Expr expression",
         "Literal  : Any value",
-        "Unary    : Token operator, Expr right"
-        ]
-    )    
+        "Unary    : Token operator, Expr right",
+        "Variable : Token name"
+        ],
+        ["from tokens import Token"]
+    )
+
+    define_ast(args.output_dir, "Stmt", [
+        "Block      : List[Stmt] statements",
+        "Expression : Expr expression",
+        "Print      : Expr expression",
+        "Var        : Token name, Expr initializer"
+      ],
+      ["from expr import Expr",
+      "from tokens import Token"]
+    )
