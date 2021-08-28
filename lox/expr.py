@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Generic, List, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar
 import attr
 from tokens import Token
 
@@ -47,6 +47,16 @@ class Literal(Expr):
 
 
 @attr.s(auto_attribs=True)
+class Logical(Expr):
+	left: Expr
+	operator: Token
+	right: Expr
+
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
+		return visitor.visit_logical_expr(self)
+
+
+@attr.s(auto_attribs=True)
 class Unary(Expr):
 	operator: Token
 	right: Expr
@@ -75,6 +85,9 @@ class ExprVisitor(ABC, Generic[R]):
 		raise NotImplemented()
 
 	def visit_literal_expr(self, expr: Literal) -> R:
+		raise NotImplemented()
+
+	def visit_logical_expr(self, expr: Logical) -> R:
 		raise NotImplemented()
 
 	def visit_unary_expr(self, expr: Unary) -> R:

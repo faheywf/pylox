@@ -1,9 +1,9 @@
 from typing import Any, List
 import attr
 from environment import Environment
-from exceptions import LoxRuntimeError
-from expr import Assign, Binary, Expr, Grouping, Literal, Unary, ExprVisitor, Variable
-from stmt import Block, Expression, Print, Stmt, StmtVisitor, Var
+from exceptions import BreakStmtException, LoxRuntimeError
+from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, ExprVisitor, Variable
+from stmt import Block, Break, Expression, If, Print, Stmt, StmtVisitor, Var, While
 from token_type import TokenType
 from tokens import Token
 
@@ -36,8 +36,17 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
     def visit_block_stmt(self, stmt: Block):
         self.execute_block(stmt.statements, Environment(self.environment))
 
+    def visit_break_stmt(self, stmt: Break):
+        raise BreakStmtException
+
     def visit_expression_stmt(self, stmt: Expression):
         self.evaluate(stmt.expression)
+
+    def visit_if_stmt(self, stmt: If):
+        if self.is_truthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.then_branch)
+        elif stmt.else_branch != None:
+            self.execute(stmt.else_branch)
 
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
@@ -50,6 +59,13 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
         if stmt.initializer is not None:
             value = self.evaluate(stmt.initializer)
         self.environment.define(stmt.name.lexeme, value)
+
+    def visit_while_stmt(self, stmt: While):
+        try:
+            while self.is_truthy(self.evaluate(stmt.condition)):
+                self.execute(stmt.body)
+        except BreakStmtException:
+            pass
 
     def visit_assign_expr(self, expr: Assign) -> Any:
         value = self.evaluate(expr.value)
@@ -100,6 +116,16 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
 
     def visit_literal_expr(self, expr: Literal) -> Any:
         return expr.value
+    
+    def visit_logical_expr(self, expr: Logical) -> Any:
+        left = self.evaluate(expr.left)
+        if expr.operator.token_type == TokenType.OR:
+            if self.is_truthy(left):
+                return left
+        else:
+            if not self.is_truthy(left):
+                return left
+        return self.evaluate(expr.right)
 
     def visit_unary_expr(self, expr: Unary) -> Any:
         right = self.evaluate(expr.right)

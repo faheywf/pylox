@@ -11,6 +11,6 @@ class TokenType(enum.Enum):
   IDENTIFIER, STRING, NUMBER = range(20, 23)
 
   # Keywords.
-  AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE = range(23, 39)
+  AND, BREAK, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE = range(23, 40)
 
-  EOF = 39
+  EOF = 40

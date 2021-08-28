@@ -2,6 +2,11 @@ import attr
 from tokens import Token
 
 @attr.s(auto_attribs=True)
+class BreakStmtException(Exception):
+    pass
+
+
+@attr.s(auto_attribs=True)
 class LoxRuntimeError(Exception):
     token: Token
     message: str
