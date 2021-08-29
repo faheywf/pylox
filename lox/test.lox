@@ -1,21 +1,8 @@
-var a = 0;
-var temp;
-for (var b = 1; a < 10000; b = temp + b) {
-  print a;
-  temp = a;
-  a = b;
-  if (a > 100){
-    break;
-  }
+fun fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 2) + fib(n - 1);
 }
-a = 0;
-b = 1;
-while (a < 10000) {
-  print a;
-  temp = a;
-  a = b;
-  b = temp + b;
-  if (a > 100){
-    break;
-  }
+
+for (var i = 0; i < 20; i = i + 1) {
+  print fib(i);
 }

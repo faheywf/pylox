@@ -1,15 +1,19 @@
 from typing import Any, List
 import attr
+from clock import Clock
 from environment import Environment
-from exceptions import BreakStmtException, LoxRuntimeError
-from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, ExprVisitor, Variable
-from stmt import Block, Break, Expression, If, Print, Stmt, StmtVisitor, Var, While
+from exceptions import BreakStmtException, LoxRuntimeError, ReturnStmtException
+from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, ExprVisitor, Variable
+from lox_callable import LoxCallable
+from lox_function import LoxFunction
+from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, StmtVisitor, Var, While
 from token_type import TokenType
 from tokens import Token
 
 @attr.s(auto_attribs=True)
 class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
-    environment = Environment()
+    lox_globals = Environment(values={"clock": Clock()})
+    environment = lox_globals
 
     def interpret(self, statements: List[Stmt], repl: bool):
         # chapter 8 challenge 1 allow REPL to print last expression
@@ -26,8 +30,8 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
 
     def execute_block(self, statements: List[Stmt], environment: Environment):
         previous = self.environment
+        self.environment = environment
         try:
-            self.environment = environment
             for statement in statements:
                 self.execute(statement)
         finally:
@@ -42,6 +46,10 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
     def visit_expression_stmt(self, stmt: Expression):
         self.evaluate(stmt.expression)
 
+    def visit_function_stmt(self, stmt: Function):
+        fn = LoxFunction(stmt, self.environment)
+        self.environment.define(stmt.name.lexeme, fn)
+
     def visit_if_stmt(self, stmt: If):
         if self.is_truthy(self.evaluate(stmt.condition)):
             self.execute(stmt.then_branch)
@@ -51,6 +59,12 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
+
+    def visit_return_stmt(self, stmt: Return):
+        value = None
+        if stmt.value is not None:
+            value = self.evaluate(stmt.value)
+        raise ReturnStmtException(value)
 
     def visit_var_stmt(self, stmt: Var):
         # chapter 8 challenge 2
@@ -111,6 +125,17 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
             self.check_number_operands(expr.operator, left, right)
             return float(left) * float(right)
     
+    def visit_call_expr(self, expr: Call) -> Any:
+        callee = self.evaluate(expr.callee)
+        arguments: List[Any] = []
+        for argument in expr.arguments:
+            arguments.append(self.evaluate(argument))
+        if not isinstance(callee, LoxCallable):
+            raise LoxRuntimeError(expr.paren, "Can only call functions and classes.")
+        if len(arguments) != callee.arity():
+            raise LoxRuntimeError(expr.paren, f"Expected {callee.arity()} arguments but got {len(arguments)}.")
+        return callee(self, arguments)
+
     def visit_grouping(self, expr: Grouping) -> Any:
         return self.evaluate(expr.expression)
 

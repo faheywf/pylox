@@ -22,7 +22,7 @@ class Block(Stmt):
 
 @attr.s(auto_attribs=True)
 class Break(Stmt):
-	token: Token
+	keyword: Token
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_break_stmt(self)
@@ -34,6 +34,16 @@ class Expression(Stmt):
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_expression_stmt(self)
+
+
+@attr.s(auto_attribs=True)
+class Function(Stmt):
+	name: Token
+	params: List[Token]
+	body: List[Stmt]
+
+	def accept(self, visitor: "StmtVisitor[R]") -> R:
+		return visitor.visit_function_stmt(self)
 
 
 @attr.s(auto_attribs=True)
@@ -52,6 +62,15 @@ class Print(Stmt):
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_print_stmt(self)
+
+
+@attr.s(auto_attribs=True)
+class Return(Stmt):
+	keyword: Token
+	value: Expr
+
+	def accept(self, visitor: "StmtVisitor[R]") -> R:
+		return visitor.visit_return_stmt(self)
 
 
 @attr.s(auto_attribs=True)
@@ -83,10 +102,16 @@ class StmtVisitor(ABC, Generic[R]):
 	def visit_expression_stmt(self, stmt: Expression) -> R:
 		raise NotImplemented()
 
+	def visit_function_stmt(self, stmt: Function) -> R:
+		raise NotImplemented()
+
 	def visit_if_stmt(self, stmt: If) -> R:
 		raise NotImplemented()
 
 	def visit_print_stmt(self, stmt: Print) -> R:
+		raise NotImplemented()
+
+	def visit_return_stmt(self, stmt: Return) -> R:
 		raise NotImplemented()
 
 	def visit_var_stmt(self, stmt: Var) -> R:

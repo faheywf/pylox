@@ -1,3 +1,4 @@
+from typing import Any
 import attr
 from tokens import Token
 
@@ -15,3 +16,7 @@ class LoxRuntimeError(Exception):
 @attr.s(auto_attribs=True)
 class ParseException(Exception):
     pass
+
+@attr.s(auto_attribs=True)
+class ReturnStmtException(Exception):
+    value: Any

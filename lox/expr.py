@@ -31,6 +31,16 @@ class Binary(Expr):
 
 
 @attr.s(auto_attribs=True)
+class Call(Expr):
+	callee: Expr
+	paren: Token
+	arguments: List[Expr]
+
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
+		return visitor.visit_call_expr(self)
+
+
+@attr.s(auto_attribs=True)
 class Grouping(Expr):
 	expression: Expr
 
@@ -79,6 +89,9 @@ class ExprVisitor(ABC, Generic[R]):
 		raise NotImplemented()
 
 	def visit_binary_expr(self, expr: Binary) -> R:
+		raise NotImplemented()
+
+	def visit_call_expr(self, expr: Call) -> R:
 		raise NotImplemented()
 
 	def visit_grouping_expr(self, expr: Grouping) -> R:

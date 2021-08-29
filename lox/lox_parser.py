@@ -1,8 +1,8 @@
 from typing import Callable, List, Optional
 import attr
 from exceptions import ParseException
-from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-from stmt import Block, Break, Expression, If, Stmt, Print, Var, While
+from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from stmt import Block, Break, Expression, Function, If, Return, Stmt, Print, Var, While
 from token_type import TokenType
 from tokens import Token
 
@@ -23,6 +23,8 @@ class Parser:
 
     def declaration(self, within_loop: bool = False):
         try:
+            if self.match(TokenType.FUN):
+                return self.function("function", within_loop)
             if self.match(TokenType.VAR):
                 return self.var_declaration()
             return self.statement(within_loop)
@@ -38,6 +40,8 @@ class Parser:
             return self.if_statement(within_loop)
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        if self.match(TokenType.RETURN):
+            return self.return_statement()
         if self.match(TokenType.WHILE):
             return self.while_statement()
         if self.match(TokenType.LEFT_BRACE):
@@ -103,6 +107,15 @@ class Parser:
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
 
+    def return_statement(self) -> Stmt:
+        keyword = self.previous()
+        value: Optional[Expr] = None
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+        
+        self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        return Return(keyword, value)
+
     def var_declaration(self) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
         initial_value: Optional[Expr] = None
@@ -122,6 +135,24 @@ class Parser:
         expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Expression(expr)
+
+    def function(self, kind: str, within_loop: bool = False):
+        name = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
+
+        self.consume(TokenType.LEFT_PAREN, f"Expect '(' after {kind} name.")
+        parameters: List[Token] = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+            while self.match(TokenType.COMMA):
+                if len(parameters) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 parameters.")
+                parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body.")
+        body = self.block(within_loop)
+        return Function(name, parameters, body)
+
 
     def block(self, within_loop: bool = False) -> List[Stmt]:
         statements: List[Stmt] = []
@@ -196,7 +227,27 @@ class Parser:
             operator = self.previous()
             right = self.unary()
             return Unary(operator, right)
-        return self.primary()
+        return self.call()
+
+    def call(self) -> Expr:
+        expr = self.primary()
+        while True:
+            if self.match(TokenType.LEFT_PAREN):
+                expr = self.finish_call(expr)
+            else:
+                break
+        return expr
+
+    def finish_call(self, callee: Expr) -> Expr:
+        arguments: List[Expr] = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            arguments.append(self.expression())
+            while self.match(TokenType.COMMA):
+                if len(arguments) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 arguments.")
+                arguments.append(self.expression())
+        paren = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+        return Call(callee, paren, arguments)
 
     def primary(self) -> Expr:
         if self.match(TokenType.FALSE):
