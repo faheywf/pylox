@@ -3,17 +3,33 @@ import attr
 from exceptions import LoxRuntimeError
 from tokens import Token
 
-@attr.s(auto_attribs=True)
+
 class Environment:
-    enclosing: Optional["Environment"] = None
-    values: Dict[str, Any] = {}
-    # chapter 8 challenge 2
-    # runtime error to access uninitialized variable
-    # create a unique instance to represent Nil separately from None
-    nil: Any = object()
+    def __init__(self, enclosing: Optional["Environment"] = None):
+        self.enclosing = enclosing
+        self.values = {}
+        # chapter 8 challenge 2
+        # runtime error to access uninitialized variable
+        # create a unique instance to represent Nil separately from None
+        self.nil: Any = object()
 
     def define(self, name: str, value: Any):
         self.values[name] = value
+
+    def ancestor(self, distance: int) -> "Environment":
+        environment = self
+        for i in range(distance):
+            environment = environment.enclosing
+        return environment
+
+    def get_at(self, distance: int, name: Token) -> Any:
+        ancestor = self.ancestor(distance)
+        if name.lexeme in ancestor.values:
+            return ancestor.values[name.lexeme]
+        raise LoxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
+
+    def assign_at(self, distance: int, name: Token, value: Any):
+        self.ancestor(distance).values[name.lexeme] = value
 
     def get(self, name: Token) -> Any:
         if name.lexeme in self.values:

@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 import attr
 from clock import Clock
 from environment import Environment
@@ -10,10 +10,12 @@ from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, St
 from token_type import TokenType
 from tokens import Token
 
-@attr.s(auto_attribs=True)
 class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
-    lox_globals = Environment(values={"clock": Clock()})
-    environment = lox_globals
+    def __init__(self):
+        self.lox_globals = Environment()
+        self.lox_globals.define("clock", Clock())
+        self.environment = self.lox_globals
+        self.lox_locals: Dict[Expr, int] = {}
 
     def interpret(self, statements: List[Stmt], repl: bool):
         # chapter 8 challenge 1 allow REPL to print last expression
@@ -28,10 +30,13 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
     def execute(self, stmt: Stmt):
         stmt.accept(self)
 
+    def resolve(self, expr: Expr, depth: int):
+        self.lox_locals[expr] = depth
+
     def execute_block(self, statements: List[Stmt], environment: Environment):
         previous = self.environment
-        self.environment = environment
         try:
+            self.environment = environment
             for statement in statements:
                 self.execute(statement)
         finally:
@@ -83,7 +88,13 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
 
     def visit_assign_expr(self, expr: Assign) -> Any:
         value = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
+
+        distance = self.lox_locals.get(expr, None)
+        if distance is not None:
+            self.environment.assign_at(distance, expr.name, value)
+        else:
+            self.lox_globals.assign(expr.name, value)
+            
         return value
 
     def visit_binary_expr(self, expr: Binary) -> Any:
@@ -161,7 +172,13 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
             return -float(right)
 
     def visit_variable_expr(self, expr: Variable) -> Any:
-        return self.environment.get(expr.name)
+        return self.lookup_variable(expr.name, expr)
+    
+    def lookup_variable(self, name: Token, expr: Expr) -> Any:
+        distance = self.lox_locals.get(expr, None)
+        if distance is not None:
+            return self.environment.get_at(distance, name)
+        return self.lox_globals.get(name)
 
     def check_number_operand(self, operator: Token, operand: Any):
         if isinstance(operand, float):

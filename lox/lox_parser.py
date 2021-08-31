@@ -92,7 +92,10 @@ class Parser:
         body = self.statement(True)
 
         if increment is not None:
-            body = Block([body, Expression(increment)])
+            if isinstance(body, Block):
+                body.statements.append(Expression(increment))
+            else:
+                body = Block([body, Expression(increment)])
 
         if condition is None:
             condition = Literal(True)

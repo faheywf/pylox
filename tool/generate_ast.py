@@ -9,13 +9,16 @@ def define_ast(output_dir: str, base_name: str, types: List[str], internal_depen
     output : List[str] = []
     output.append("from abc import ABC")
     output.append("from typing import Any, Generic, List, Optional, TypeVar")
-    output.append("import attr")
+    #output.append("import attr")
     output += internal_dependencies
     output.append("")
     output.append("R = TypeVar(\"R\")")
     output.append("")
-    output.append("@attr.s(auto_attribs=True)")
+    #output.append("@attr.s(auto_attribs=True)")
     output.append(f"class {base_name}(ABC):")
+    output.append(f"\tdef __init__(self):")
+    output.append(f"\t\tpass")
+    output.append(f"\t\traise NotImplemented()")
     output.append(f"\tdef accept(self, visitor: \"{base_name}Visitor\"):")
     output.append(f"\t\traise NotImplemented()")
     output.append("")
@@ -33,7 +36,7 @@ def define_ast(output_dir: str, base_name: str, types: List[str], internal_depen
         f.writelines([line + "\n" for line in output])
 
 def define_visitor(output: List[str], base_name: str, types: List[str]):
-    output.append("@attr.s(auto_attribs=True)")
+    #output.append("@attr.s(auto_attribs=True)")
     output.append(f"class {base_name}Visitor(ABC, Generic[R]):")
     for t in types:
         type_name = t.split(":")[0].strip()
@@ -43,13 +46,19 @@ def define_visitor(output: List[str], base_name: str, types: List[str]):
 
 
 def define_type(output: List[str], base_name: str, class_name: str, fields: str):
-    output.append("@attr.s(auto_attribs=True)")
+    #output.append("@attr.s(auto_attribs=True, frozen=True)")
     output.append(f"class {class_name}({base_name}):")
 
     fields = fields.split(",")
+    init = "\tdef __init__(self"
     for field in fields:
         t, n = field.split()
-        output.append(f"\t{n}: {t}")
+        init += f", {n}: {t}"
+    init += "):"
+    output.append(init)
+    for field in fields:
+        t, n = field.split()
+        output.append(f"\t\tself.{n} = {n}")
 
     output.append("")
     

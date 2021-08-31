@@ -1,97 +1,97 @@
 from abc import ABC
 from typing import Any, Generic, List, Optional, TypeVar
-import attr
 from expr import Expr
 from tokens import Token
 
 R = TypeVar("R")
 
-@attr.s(auto_attribs=True)
 class Stmt(ABC):
+	def __init__(self):
+		pass
+		raise NotImplemented()
 	def accept(self, visitor: "StmtVisitor"):
 		raise NotImplemented()
 
 
-@attr.s(auto_attribs=True)
 class Block(Stmt):
-	statements: List[Stmt]
+	def __init__(self, statements: List[Stmt]):
+		self.statements = statements
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_block_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class Break(Stmt):
-	keyword: Token
+	def __init__(self, keyword: Token):
+		self.keyword = keyword
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_break_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class Expression(Stmt):
-	expression: Expr
+	def __init__(self, expression: Expr):
+		self.expression = expression
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_expression_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class Function(Stmt):
-	name: Token
-	params: List[Token]
-	body: List[Stmt]
+	def __init__(self, name: Token, params: List[Token], body: List[Stmt]):
+		self.name = name
+		self.params = params
+		self.body = body
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_function_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class If(Stmt):
-	condition: Expr
-	then_branch: Stmt
-	else_branch: Optional[Stmt]
+	def __init__(self, condition: Expr, then_branch: Stmt, else_branch: Optional[Stmt]):
+		self.condition = condition
+		self.then_branch = then_branch
+		self.else_branch = else_branch
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_if_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class Print(Stmt):
-	expression: Expr
+	def __init__(self, expression: Expr):
+		self.expression = expression
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_print_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class Return(Stmt):
-	keyword: Token
-	value: Expr
+	def __init__(self, keyword: Token, value: Expr):
+		self.keyword = keyword
+		self.value = value
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_return_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class Var(Stmt):
-	name: Token
-	initializer: Expr
+	def __init__(self, name: Token, initializer: Expr):
+		self.name = name
+		self.initializer = initializer
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_var_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class While(Stmt):
-	condition: Expr
-	body: Stmt
+	def __init__(self, condition: Expr, body: Stmt):
+		self.condition = condition
+		self.body = body
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:
 		return visitor.visit_while_stmt(self)
 
 
-@attr.s(auto_attribs=True)
 class StmtVisitor(ABC, Generic[R]):
 	def visit_block_stmt(self, stmt: Block) -> R:
 		raise NotImplemented()

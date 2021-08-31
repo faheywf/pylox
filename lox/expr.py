@@ -1,89 +1,89 @@
 from abc import ABC
 from typing import Any, Generic, List, Optional, TypeVar
-import attr
 from tokens import Token
 
 R = TypeVar("R")
 
-@attr.s(auto_attribs=True)
 class Expr(ABC):
+	def __init__(self):
+		pass
+		raise NotImplemented()
 	def accept(self, visitor: "ExprVisitor"):
 		raise NotImplemented()
 
 
-@attr.s(auto_attribs=True)
 class Assign(Expr):
-	name: Token
-	value: Expr
+	def __init__(self, name: Token, value: Expr):
+		self.name = name
+		self.value = value
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_assign_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class Binary(Expr):
-	left: Expr
-	operator: Token
-	right: Expr
+	def __init__(self, left: Expr, operator: Token, right: Expr):
+		self.left = left
+		self.operator = operator
+		self.right = right
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_binary_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class Call(Expr):
-	callee: Expr
-	paren: Token
-	arguments: List[Expr]
+	def __init__(self, callee: Expr, paren: Token, arguments: List[Expr]):
+		self.callee = callee
+		self.paren = paren
+		self.arguments = arguments
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_call_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class Grouping(Expr):
-	expression: Expr
+	def __init__(self, expression: Expr):
+		self.expression = expression
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_grouping_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class Literal(Expr):
-	value: Any
+	def __init__(self, value: Any):
+		self.value = value
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_literal_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class Logical(Expr):
-	left: Expr
-	operator: Token
-	right: Expr
+	def __init__(self, left: Expr, operator: Token, right: Expr):
+		self.left = left
+		self.operator = operator
+		self.right = right
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_logical_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class Unary(Expr):
-	operator: Token
-	right: Expr
+	def __init__(self, operator: Token, right: Expr):
+		self.operator = operator
+		self.right = right
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_unary_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class Variable(Expr):
-	name: Token
+	def __init__(self, name: Token):
+		self.name = name
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_variable_expr(self)
 
 
-@attr.s(auto_attribs=True)
 class ExprVisitor(ABC, Generic[R]):
 	def visit_assign_expr(self, expr: Assign) -> R:
 		raise NotImplemented()

@@ -5,10 +5,10 @@ from exceptions import ReturnStmtException
 from lox_callable import LoxCallable
 from stmt import Function
 
-@attr.s(auto_attribs=True)
 class LoxFunction(LoxCallable):
-    declaration: Function
-    closure: Environment
+    def __init__(self, declaration: Function, closure: Environment):
+        self.declaration = declaration
+        self.closure = closure
 
     def __call__(self, interpreter: "Interpreter", arguments: List[Any]) -> Any:
         environment = Environment(self.closure)

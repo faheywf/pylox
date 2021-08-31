@@ -7,6 +7,7 @@ from exceptions import LoxRuntimeError
 from expr import Expr
 from interpreter import Interpreter
 from lox_parser import Parser
+from resolver import Resolver
 from scanner import Scanner
 from tokens import Token
 
@@ -15,6 +16,7 @@ class Lox():
         self.had_error = False
         self.had_runtime_error = False
         self.interpreter = Interpreter()
+        self.print_ast = False
 
     def run_file(self, filename: str):
         with open(filename, 'r') as f:
@@ -37,6 +39,16 @@ class Lox():
         tokens: List[Token] = scanner.scan_tokens()
         parser = Parser(tokens, self.report)
         statements = parser.parse()
+
+        if self.had_error:
+            return
+
+        if self.print_ast:
+            ast_printer = AstPrinter()
+            ast_printer.print_statements(statements)
+
+        resolver = Resolver(self.interpreter, self.report)
+        resolver.resolve(statements)
 
         if self.had_error:
             return
