@@ -3,10 +3,11 @@ import attr
 from clock import Clock
 from environment import Environment
 from exceptions import BreakStmtException, LoxRuntimeError, ReturnStmtException
-from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, ExprVisitor, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, ExprVisitor, Variable
 from lox_callable import LoxCallable
+from lox_class import LoxClass, LoxInstance
 from lox_function import LoxFunction
-from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, StmtVisitor, Var, While
+from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, StmtVisitor, Var, While
 from token_type import TokenType
 from tokens import Token
 
@@ -45,6 +46,17 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
     def visit_block_stmt(self, stmt: Block):
         self.execute_block(stmt.statements, Environment(self.environment))
 
+    def visit_class_stmt(self, stmt: Class):
+        self.environment.define(stmt.name.lexeme, None)
+
+        methods: Dict[str, LoxFunction] = {}
+        for method in stmt.methods:
+            fn = LoxFunction(method, self.environment, method.name.lexeme == "init")
+            methods[method.name.lexeme] = fn
+
+        klass = LoxClass(stmt.name.lexeme, methods)
+        self.environment.assign(stmt.name, klass)
+
     def visit_break_stmt(self, stmt: Break):
         raise BreakStmtException
 
@@ -52,7 +64,7 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
         self.evaluate(stmt.expression)
 
     def visit_function_stmt(self, stmt: Function):
-        fn = LoxFunction(stmt, self.environment)
+        fn = LoxFunction(stmt, self.environment, False)
         self.environment.define(stmt.name.lexeme, fn)
 
     def visit_if_stmt(self, stmt: If):
@@ -147,6 +159,12 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
             raise LoxRuntimeError(expr.paren, f"Expected {callee.arity()} arguments but got {len(arguments)}.")
         return callee(self, arguments)
 
+    def visit_get_expr(self, expr: Get) -> Any:
+        obj: Any = self.evaluate(expr.object)
+        if isinstance(obj, LoxInstance):
+            return obj.get(expr.name)
+        raise LoxRuntimeError(expr.name, "Only instances have properties.")
+
     def visit_grouping(self, expr: Grouping) -> Any:
         return self.evaluate(expr.expression)
 
@@ -162,6 +180,17 @@ class Interpreter(ExprVisitor[Any], StmtVisitor[None]):
             if not self.is_truthy(left):
                 return left
         return self.evaluate(expr.right)
+
+    def visit_set_expr(self, expr: Set) -> Any:
+        obj: Any = self.evaluate(expr.object)
+        if not isinstance(obj, LoxInstance):
+            raise LoxRuntimeError(expr.name, "Only instances have fields.")
+        value: Any = self.evaluate(expr.value)
+        obj.set(expr.name, value)
+        return value
+
+    def visit_this_expr(self, expr: This) -> Any:
+        return self.lookup_variable(expr.keyword, expr)
 
     def visit_unary_expr(self, expr: Unary) -> Any:
         right = self.evaluate(expr.right)

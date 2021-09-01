@@ -41,6 +41,15 @@ class Call(Expr):
 		return visitor.visit_call_expr(self)
 
 
+class Get(Expr):
+	def __init__(self, object: Expr, name: Token):
+		self.object = object
+		self.name = name
+
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
+		return visitor.visit_get_expr(self)
+
+
 class Grouping(Expr):
 	def __init__(self, expression: Expr):
 		self.expression = expression
@@ -65,6 +74,24 @@ class Logical(Expr):
 
 	def accept(self, visitor: "ExprVisitor[R]") -> R:
 		return visitor.visit_logical_expr(self)
+
+
+class Set(Expr):
+	def __init__(self, object: Expr, name: Token, value: Expr):
+		self.object = object
+		self.name = name
+		self.value = value
+
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
+		return visitor.visit_set_expr(self)
+
+
+class This(Expr):
+	def __init__(self, keyword: Token):
+		self.keyword = keyword
+
+	def accept(self, visitor: "ExprVisitor[R]") -> R:
+		return visitor.visit_this_expr(self)
 
 
 class Unary(Expr):
@@ -94,6 +121,9 @@ class ExprVisitor(ABC, Generic[R]):
 	def visit_call_expr(self, expr: Call) -> R:
 		raise NotImplemented()
 
+	def visit_get_expr(self, expr: Get) -> R:
+		raise NotImplemented()
+
 	def visit_grouping_expr(self, expr: Grouping) -> R:
 		raise NotImplemented()
 
@@ -101,6 +131,12 @@ class ExprVisitor(ABC, Generic[R]):
 		raise NotImplemented()
 
 	def visit_logical_expr(self, expr: Logical) -> R:
+		raise NotImplemented()
+
+	def visit_set_expr(self, expr: Set) -> R:
+		raise NotImplemented()
+
+	def visit_this_expr(self, expr: This) -> R:
 		raise NotImplemented()
 
 	def visit_unary_expr(self, expr: Unary) -> R:

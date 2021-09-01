@@ -1,8 +1,8 @@
 from typing import Callable, List, Optional
 import attr
 from exceptions import ParseException
-from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
-from stmt import Block, Break, Expression, Function, If, Return, Stmt, Print, Var, While
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, Variable
+from stmt import Block, Break, Class, Expression, Function, If, Return, Stmt, Print, Var, While
 from token_type import TokenType
 from tokens import Token
 
@@ -23,6 +23,8 @@ class Parser:
 
     def declaration(self, within_loop: bool = False):
         try:
+            if self.match(TokenType.CLASS):
+                return self.class_declaration()
             if self.match(TokenType.FUN):
                 return self.function("function", within_loop)
             if self.match(TokenType.VAR):
@@ -30,6 +32,18 @@ class Parser:
             return self.statement(within_loop)
         except ParseException:
             self.synchronize()
+
+    def class_declaration(self, within_loop: bool = False) -> Stmt:
+        name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        methods: List[Function] = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
+            methods.append(self.function("method", within_loop))
+
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' before class body.")
+
+        return Class(name, methods)
 
     def statement(self, within_loop: bool = False) -> Stmt:
         if self.match(TokenType.BREAK):
@@ -173,6 +187,8 @@ class Parser:
             if isinstance(expr, Variable):
                 name = expr.name
                 return Assign(name, value)
+            elif isinstance(expr, Get):
+                return Set(expr.object, expr.name, value)
             
             self.error(equals, "Invalid assignment target.")
         return expr
@@ -237,6 +253,9 @@ class Parser:
         while True:
             if self.match(TokenType.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TokenType.DOT):
+                name = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+                expr = Get(expr, name)
             else:
                 break
         return expr
@@ -262,6 +281,9 @@ class Parser:
         
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+
+        if self.match(TokenType.THIS):
+            return This(self.previous())
 
         if self.match(TokenType.IDENTIFIER):
             return Variable(self.previous())

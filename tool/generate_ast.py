@@ -75,9 +75,12 @@ if __name__ == '__main__':
         "Assign   : Token name, Expr value",
         "Binary   : Expr left, Token operator, Expr right",
         "Call     : Expr callee, Token paren, List[Expr] arguments",
+        "Get      : Expr object, Token name",
         "Grouping : Expr expression",
         "Literal  : Any value",
         "Logical  : Expr left, Token operator, Expr right",
+        "Set      : Expr object, Token name, Expr value",
+        "This     : Token keyword",
         "Unary    : Token operator, Expr right",
         "Variable : Token name"
         ],
@@ -87,6 +90,7 @@ if __name__ == '__main__':
     define_ast(args.output_dir, "Stmt", [
         "Block      : List[Stmt] statements",
         "Break      : Token keyword",
+        "Class      : Token name, List[\"Function\"] methods",
         "Expression : Expr expression",
         "Function   : Token name, List[Token] params, List[Stmt] body",
         "If         : Expr condition, Stmt then_branch, Optional[Stmt] else_branch",

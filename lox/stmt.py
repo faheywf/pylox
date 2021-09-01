@@ -29,6 +29,15 @@ class Break(Stmt):
 		return visitor.visit_break_stmt(self)
 
 
+class Class(Stmt):
+	def __init__(self, name: Token, methods: List["Function"]):
+		self.name = name
+		self.methods = methods
+
+	def accept(self, visitor: "StmtVisitor[R]") -> R:
+		return visitor.visit_class_stmt(self)
+
+
 class Expression(Stmt):
 	def __init__(self, expression: Expr):
 		self.expression = expression
@@ -97,6 +106,9 @@ class StmtVisitor(ABC, Generic[R]):
 		raise NotImplemented()
 
 	def visit_break_stmt(self, stmt: Break) -> R:
+		raise NotImplemented()
+
+	def visit_class_stmt(self, stmt: Class) -> R:
 		raise NotImplemented()
 
 	def visit_expression_stmt(self, stmt: Expression) -> R:

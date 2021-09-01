@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 import attr
 from exceptions import LoxRuntimeError
 from tokens import Token
@@ -22,10 +22,14 @@ class Environment:
             environment = environment.enclosing
         return environment
 
-    def get_at(self, distance: int, name: Token) -> Any:
+    def get_at(self, distance: int, name: Union[Token, str]) -> Any:
         ancestor = self.ancestor(distance)
-        if name.lexeme in ancestor.values:
-            return ancestor.values[name.lexeme]
+        if isinstance(name, Token):
+            key = name.lexeme
+        else:
+            key = name
+        if key in ancestor.values:
+            return ancestor.values[key]
         raise LoxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
 
     def assign_at(self, distance: int, name: Token, value: Any):
