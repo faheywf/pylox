@@ -6,8 +6,9 @@ from lox_function import LoxFunction
 
 
 class LoxClass(LoxCallable):
-    def __init__(self, name: str, methods: Dict[str, LoxFunction]):
+    def __init__(self, name: str, superclass: "LoxClass", methods: Dict[str, LoxFunction]):
         self.name = name
+        self.superclass = superclass
         self.methods = methods
 
     def __call__(self, interpreter: "Interpreter", arguments: List[Any]):
@@ -27,7 +28,10 @@ class LoxClass(LoxCallable):
         return initializer.arity()
 
     def find_method(self, name: str) -> Optional[LoxFunction]:
-        return self.methods.get(name, None)
+        method = self.methods.get(name, None)
+        if method is None and self.superclass is not None:
+            return self.superclass.find_method(name)
+        return method
 
 class LoxInstance:
     def __init__(self, klass: LoxClass):
@@ -41,11 +45,11 @@ class LoxInstance:
         if name.lexeme in self.fields:
             return self.fields[name.lexeme]
 
-        method: LoxFunction = self.klass.find_method(name.lexeme)
+        method: Optional[LoxFunction] = self.klass.find_method(name.lexeme)
         if method is not None:
             return method.bind(self)
             
-        raise LoxRuntimeError(f"Undefined property '{name.lexeme}'.")
+        raise LoxRuntimeError(name, f"Undefined property '{name.lexeme}'.")
 
     def set(self, name: Token, value: Any):
         self.fields[name.lexeme] = value

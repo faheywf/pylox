@@ -1,6 +1,6 @@
 from abc import ABC
 from typing import Any, Generic, List, Optional, TypeVar
-from expr import Expr
+from expr import Expr, Variable
 from tokens import Token
 
 R = TypeVar("R")
@@ -30,8 +30,9 @@ class Break(Stmt):
 
 
 class Class(Stmt):
-	def __init__(self, name: Token, methods: List["Function"]):
+	def __init__(self, name: Token, superclass: Variable, methods: List["Function"]):
 		self.name = name
+		self.superclass = superclass
 		self.methods = methods
 
 	def accept(self, visitor: "StmtVisitor[R]") -> R:

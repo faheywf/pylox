@@ -1,7 +1,7 @@
 from typing import Callable, List, Optional
 import attr
 from exceptions import ParseException
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Super, This, Unary, Variable
 from stmt import Block, Break, Class, Expression, Function, If, Return, Stmt, Print, Var, While
 from token_type import TokenType
 from tokens import Token
@@ -35,6 +35,12 @@ class Parser:
 
     def class_declaration(self, within_loop: bool = False) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+
+        superclass: Optional[Variable] = None
+        if self.match(TokenType.LESS):
+            self.consume(TokenType.IDENTIFIER, "Expect superclass name")
+            superclass = Variable(self.previous())
+
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
         methods: List[Function] = []
@@ -43,7 +49,7 @@ class Parser:
 
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' before class body.")
 
-        return Class(name, methods)
+        return Class(name, superclass, methods)
 
     def statement(self, within_loop: bool = False) -> Stmt:
         if self.match(TokenType.BREAK):
@@ -281,6 +287,12 @@ class Parser:
         
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+
+        if self.match(TokenType.SUPER):
+            keyword = self.previous()
+            self.consume(TokenType.DOT, "Expect '.' after 'super'.")
+            method = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+            return Super(keyword, method)
 
         if self.match(TokenType.THIS):
             return This(self.previous())

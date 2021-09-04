@@ -1,4 +1,4 @@
 import enum
 
 class ClassType(enum.Enum):
-    NONE, CLASS = range(2)
+    NONE, CLASS, SUBCLASS = range(3)
